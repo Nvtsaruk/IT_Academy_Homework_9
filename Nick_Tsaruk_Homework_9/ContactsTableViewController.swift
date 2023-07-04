@@ -10,30 +10,48 @@ struct Person {
     var name: String
     var lastname: String
 }
-class ContactsTableViewController: UITableViewController {
 
+class ContactsTableViewController: UITableViewController {
+    
     @IBOutlet var contactTableView: UITableView!
+    
     private var personArray:[Person] = [] {
         didSet {
+            contactsDictionary = [:]
             fillContactsDictionary(array: &personArray)
         }
     }
-
+    
     private var contactsDictionary:[Int:[Person]] = [:] {
         didSet{
             contactTableView.reloadData()
         }
     }
+    private var canEdit: Bool = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         let nib = UINib(nibName: "ContactTableViewCell", bundle: nil)
         self.contactTableView.register(nib, forCellReuseIdentifier: "ContactCell")
-
+        
     }
     private func setupUI() {
         title = "Contacts"
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContact(_:)))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Edit", style: .plain, target: self, action: #selector(editContacts(_:)))
+    }
+    
+    @objc private func editContacts(_ sender: UIButton) {
+        if !canEdit {
+            navigationItem.leftBarButtonItem?.title = "Done"
+            contactTableView.isEditing = true
+            canEdit = !canEdit
+        } else {
+            navigationItem.leftBarButtonItem?.title = "Edit"
+            contactTableView.isEditing = false
+            canEdit = !canEdit
+        }
     }
     
     @objc private func addContact(_ sender: UIButton) {
@@ -42,36 +60,35 @@ class ContactsTableViewController: UITableViewController {
         newContactVC.delegate = self
         present(newContactVC, animated: true)
     }
-
+    
     // MARK: - Table view data source
-
+    
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
         return contactsDictionary.count
     }
-
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
         guard let numRows = contactsDictionary[section]?.count else {return 0}
         return numRows
     }
-
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "ContactCell", for: indexPath) as? ContactTableViewCell else { return UITableViewCell()}
         guard let name = contactsDictionary[indexPath.section]?[indexPath.row].name else { return UITableViewCell()}
         guard let lastname = contactsDictionary[indexPath.section]?[indexPath.row].lastname else { return UITableViewCell()}
         cell.cellTextLabel.attributedText = getDecoratedString(name: name, lastname: lastname)
-        // Configure the cell...
-
+        
         return cell
     }
-  
+    
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         guard let first = contactsDictionary[section]?[0].name.first else { return ""}
-
+        
         return first.uppercased()
     }
-
+    
     
     private func getDecoratedString(name: String, lastname: String) -> NSMutableAttributedString {
         let nameFont = UIFont.systemFont(ofSize: 22, weight: .medium)
@@ -103,52 +120,15 @@ class ContactsTableViewController: UITableViewController {
             contactsDictionary[index] = oneLetterArray
         }
     }
-
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
-    }
-    */
-
-    /*
-    // Override to support editing the table view.
+    
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             // Delete the row from the data source
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
+            print("delete button clicked at \(indexPath.section)\\\(indexPath.row)")
+            personArray.remove(at: indexPath.row)
+            print(personArray)
+        }
     }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
 
 extension ContactsTableViewController: ContactDelegate {
