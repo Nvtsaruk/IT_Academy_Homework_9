@@ -15,6 +15,12 @@ class ContactsTableViewController: UITableViewController {
     @IBOutlet var contactTableView: UITableView!
     private var personArray:[Person] = [] {
         didSet {
+            fillContactsDictionary(array: &personArray)
+        }
+    }
+
+    private var contactsDictionary:[Int:[Person]] = [:] {
+        didSet{
             contactTableView.reloadData()
         }
     }
@@ -23,7 +29,7 @@ class ContactsTableViewController: UITableViewController {
         setupUI()
         let nib = UINib(nibName: "ContactTableViewCell", bundle: nil)
         self.contactTableView.register(nib, forCellReuseIdentifier: "ContactCell")
-        
+
     }
     private func setupUI() {
         title = "Contacts"
@@ -41,22 +47,31 @@ class ContactsTableViewController: UITableViewController {
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        return 1
+        return contactsDictionary.count
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return personArray.count
+        guard let numRows = contactsDictionary[section]?.count else {return 0}
+        return numRows
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "ContactCell", for: indexPath) as? ContactTableViewCell else { return UITableViewCell()}
-        
-        cell.cellTextLabel.attributedText = getDecoratedString(name: personArray[indexPath.row].name, lastname: personArray[indexPath.row].lastname)
+        guard let name = contactsDictionary[indexPath.section]?[indexPath.row].name else { return UITableViewCell()}
+        guard let lastname = contactsDictionary[indexPath.section]?[indexPath.row].lastname else { return UITableViewCell()}
+        cell.cellTextLabel.attributedText = getDecoratedString(name: name, lastname: lastname)
         // Configure the cell...
 
         return cell
     }
+  
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        guard let first = contactsDictionary[section]?[0].name.first else { return ""}
+
+        return first.uppercased()
+    }
+
     
     private func getDecoratedString(name: String, lastname: String) -> NSMutableAttributedString {
         let nameFont = UIFont.systemFont(ofSize: 22, weight: .medium)
@@ -67,6 +82,26 @@ class ContactsTableViewController: UITableViewController {
         fullString.addAttributes([.font: lastnameFont, .foregroundColor: UIColor.lightGray], range: fullLength)
         fullString.addAttributes([.font: nameFont, .foregroundColor: UIColor.black], range: nameRange)
         return fullString
+    }
+    
+    private func fillContactsDictionary( array: inout [Person]) {
+        array.sort { $0.name < $1.name }
+        var uniqueLetters: Set<Character> = []
+        array.forEach { person in
+            guard let firstLetter = person.name.first else { return }
+            uniqueLetters.insert(firstLetter)
+        }
+        var sortedSet = Array(uniqueLetters)
+        sortedSet.sort { $0 < $1 }
+        for (index, item) in sortedSet.enumerated() {
+            var oneLetterArray: [Person] = []
+            array.forEach{ person in
+                if person.name.first == item {
+                    oneLetterArray.append(person)
+                }
+            }
+            contactsDictionary[index] = oneLetterArray
+        }
     }
 
     /*
@@ -120,6 +155,5 @@ extension ContactsTableViewController: ContactDelegate {
     func saveContact(name: String, lastname: String) {
         let newPerson = Person(name: name, lastname: lastname)
         personArray.append(newPerson)
-        print(personArray)
     }
 }
