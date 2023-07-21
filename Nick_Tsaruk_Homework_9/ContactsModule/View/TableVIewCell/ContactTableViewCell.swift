@@ -1,8 +1,8 @@
 //
 //  ContactTableViewCell.swift
-//  Nick_Tsaruk_Homework_9
+//  NickTsarukHomewrok_9_MVP
 //
-//  Created by Tsaruk Nick on 3.07.23.
+//  Created by Tsaruk Nick on 17.07.23.
 //
 
 import UIKit
